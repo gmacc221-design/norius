@@ -1,256 +1,112 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LibraVerse — онлайн-чтение и тесты</title>
-    <meta name="description" content="Современный сайт для чтения книг, изучения героев и авторов, решения тестов и умного поиска литературы.">
+    <title>norius // visit</title>
+    <meta name="description" content="norius personal landing page">
     <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preconnect" href="https://api.lanyard.rest">
 
+    <!-- Fonts: JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="noise"></div>
-    <header class="topbar">
-        <div class="brand">
-            <span class="logo" aria-hidden="true">✦</span>
-            <div>
-                <strong>LibraVerse</strong>
-                <small>чтение · герои · авторы · тесты</small>
-            </div>
-        </div>
-        <nav class="nav">
-            <a href="#search" class="nav-link">Поиск</a>
-            <a href="#recommendations" class="nav-link">Рекомендации</a>
-            <a href="#heroes" class="nav-link">Герои</a>
-            <a href="#tests" class="nav-link">Тесты</a>
-        </nav>
-        <div class="auth-buttons">
-            <button id="open-login" class="btn ghost">Войти</button>
-            <button id="open-register" class="btn primary">Создать аккаунт</button>
-            <div id="user-chip" class="user-chip hidden">
-                <i class="fa-solid fa-user"></i>
-                <span id="user-name"></span>
-                <button id="logout" class="logout" title="Выйти" aria-label="Выйти">⨯</button>
-            </div>
-        </div>
-    </header>
+    <!-- Custom Cursor Elements -->
+    <div id="cursor"></div>
+    <div id="cursor-blur"></div>
 
-    <main>
-        <section class="hero">
-            <div class="hero-content">
-                <p class="eyebrow">книги · герои · авторы · тесты</p>
-                <h1>Создавай библиотеку, проходи тесты и находи новые книги с умным поиском.</h1>
-                <p class="lede">LibraVerse — современная платформа для чтения без бэкенда: аккаунты, избранное, информация о героях и писателях, рекомендации и полноценные тесты прямо в браузере.</p>
-                <div class="hero-actions">
-                    <button class="btn primary" id="cta-start">Начать читать</button>
-                    <button class="btn" id="cta-search">Умный поиск</button>
-                    <div class="meta">
-                        <span><i class="fa-solid fa-wand-magic-sparkles"></i> Подбор по жанрам и настроению</span>
-                        <span><i class="fa-solid fa-shield-heart"></i> Данные хранятся локально</span>
+    <canvas id="starfield"></canvas>
+    
+    <div id="toast-container"></div>
+
+    <main class="interface">
+        <div class="card" id="tilt-card">
+            <div class="profile-header">
+                <div class="avatar-wrapper">
+                    <img src="https://ui-avatars.com/api/?name=norius&background=000000&color=ffffff&size=128&bold=true" alt="norius" id="avatar">
+                    <div id="status-dot" class="status offline" title="Discord Status"></div>
+                </div>
+                <div class="user-info">
+                    <h1 class="glitch" data-text="norius">norius</h1>
+                    <div class="local-time-container">
+                        <i class="fa-regular fa-clock"></i>
+                        <span id="local-time">--:--</span>
+                        <span class="time-label">VVO</span>
                     </div>
                 </div>
             </div>
-            <div class="hero-panel">
-                <div class="stat">
-                    <div class="stat-number" id="stat-books">24</div>
-                    <div class="stat-label">книги в каталоге</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number" id="stat-heroes">36</div>
-                    <div class="stat-label">героев описано</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number" id="stat-tests">12</div>
-                    <div class="stat-label">готовых вопросов</div>
-                </div>
-                <div class="chip-list" id="live-tags"></div>
-            </div>
-        </section>
 
-        <section class="section" id="search">
-            <div class="section-header">
-                <div>
-                    <p class="eyebrow">Умный поиск</p>
-                    <h2>Находи книги по жанру, тону и ключевым словам</h2>
-                    <p class="lede">Алгоритм ранжирует результаты по совпадению названия, тегов, героев и описаний. Выбирайте фильтры и собирайте личную подборку.</p>
+            <!-- Activity Status Widget -->
+            <div id="activity-container" class="hidden">
+                <div class="activity-icon">
+                    <img id="activity-img" src="" alt="Activity">
+                    <i id="activity-default-icon" class="fa-solid fa-gamepad"></i>
                 </div>
-                <div class="filter-bar">
-                    <label class="filter">
-                        <span>Жанр</span>
-                        <select id="genre-filter">
-                            <option value="all">Все</option>
-                        </select>
-                    </label>
-                    <label class="filter">
-                        <span>Настроение</span>
-                        <select id="tone-filter">
-                            <option value="all">Любое</option>
-                            <option value="вдохновляющее">Вдохновляющее</option>
-                            <option value="мрачное">Мрачное</option>
-                            <option value="динамичное">Динамичное</option>
-                            <option value="романтичное">Романтичное</option>
-                        </select>
-                    </label>
-                    <label class="filter">
-                        <span>Возраст</span>
-                        <select id="age-filter">
-                            <option value="all">Любой</option>
-                            <option value="12+">12+</option>
-                            <option value="16+">16+</option>
-                            <option value="18+">18+</option>
-                        </select>
-                    </label>
+                <div class="activity-details">
+                    <span id="activity-name" class="act-name">Chilling</span>
+                    <span id="activity-state" class="act-state">No active status</span>
+                    <span id="activity-time" class="act-time"></span>
                 </div>
             </div>
-            <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="search" id="search-input" placeholder="Ищи по названию, герою, тегу или автору..." autocomplete="off">
-                <button class="btn" id="search-clear" aria-label="Сбросить поиск">Очистить</button>
-            </div>
-            <div id="search-results" class="card-grid"></div>
-        </section>
 
-        <section class="section" id="recommendations">
-            <div class="section-header">
-                <div>
-                    <p class="eyebrow">Рекомендации</p>
-                    <h2>Подборка под ваш вкус</h2>
-                    <p class="lede">Укажите любимые жанры и уровень сложности — мы предложим книги, героев и тесты для быстрого старта.</p>
-                </div>
-                <form id="pref-form" class="pref-form">
-                    <label>
-                        Любимые жанры
-                        <select id="pref-genres" multiple>
-                            <option value="фэнтези">Фэнтези</option>
-                            <option value="научная фантастика">Научная фантастика</option>
-                            <option value="классика">Классика</option>
-                            <option value="детектив">Детектив</option>
-                            <option value="нон-фикшн">Нон-фикшн</option>
-                            <option value="история">История</option>
-                        </select>
-                    </label>
-                    <label>
-                        Предпочтительный объём
-                        <select id="pref-size">
-                            <option value="короткие">Короткие</option>
-                            <option value="средние" selected>Средние</option>
-                            <option value="длинные">Длинные</option>
-                        </select>
-                    </label>
-                    <button type="submit" class="btn primary">Обновить подборку</button>
-                </form>
-            </div>
-            <div id="rec-list" class="card-grid compact"></div>
-        </section>
+            <div class="separator"></div>
 
-        <section class="section two-column" id="heroes">
-            <div>
-                <p class="eyebrow">Герои и писатели</p>
-                <h2>Исследуй персонажей и авторов</h2>
-                <p class="lede">Каждая карточка содержит краткую характеристику героя, книгу происхождения и акценты, которые помогут подготовиться к тесту.</p>
-                <div id="hero-list" class="mini-grid"></div>
-            </div>
-            <aside class="aside">
-                <h3>Писатели</h3>
-                <p class="muted">Биографии, ключевые произведения и тематики, которые они поднимают в книгах.</p>
-                <div id="author-list" class="stack"></div>
-            </aside>
-        </section>
-
-        <section class="section" id="tests">
-            <div class="section-header">
-                <div>
-                    <p class="eyebrow">Полноценные тесты</p>
-                    <h2>Создавай и проходи викторины по книгам</h2>
-                    <p class="lede">Добавляйте свои вопросы, закрепляйте прочитанное и проверяйте знания. Мы сохраняем прогресс в браузере.</p>
-                </div>
-                <div class="test-meta">
-                    <div class="pill"><i class="fa-solid fa-circle-check"></i> Автопроверка ответов</div>
-                    <div class="pill"><i class="fa-solid fa-cloud"></i> Локальное хранение</div>
-                </div>
-            </div>
-            <div class="test-grid">
-                <form id="question-form" class="card form-card">
-                    <h3>Создать вопрос</h3>
-                    <label>Книга/тема
-                        <input type="text" id="q-book" placeholder="Например, Ведьмак" required>
-                    </label>
-                    <label>Вопрос
-                        <textarea id="q-text" rows="2" placeholder="Чем заканчивается первая часть?" required></textarea>
-                    </label>
-                    <label>Варианты (через запятую)
-                        <input type="text" id="q-options" placeholder="Вариант 1, Вариант 2, ..." required>
-                    </label>
-                    <label>Правильный вариант
-                        <input type="text" id="q-answer" placeholder="Вариант 2" required>
-                    </label>
-                    <button type="submit" class="btn primary">Сохранить вопрос</button>
-                    <p class="muted">Вопросы сохраняются локально и доступны сразу для прохождения тестов.</p>
-                </form>
-
-                <div class="card quiz-card">
-                    <div class="quiz-header">
-                        <div>
-                            <p class="eyebrow">Режим решения</p>
-                            <h3 id="quiz-title">Мини-тест</h3>
+            <div class="links-grid">
+                <!-- Telegram -->
+                <div class="social-row">
+                    <a href="https://t.me/nozzw" target="_blank" class="social-btn telegram link-area">
+                        <div class="icon-box"><i class="fa-brands fa-telegram"></i></div>
+                        <div class="btn-text">
+                            <span class="label">Telegram</span>
+                            <span class="handle">@nozzw</span>
                         </div>
-                        <button id="next-question" class="btn">Следующий вопрос</button>
-                    </div>
-                    <div id="quiz-body" class="quiz-body"></div>
-                    <div id="quiz-feedback" class="feedback" role="status"></div>
+                        <i class="fa-solid fa-arrow-up-right-from-square arrow"></i>
+                    </a>
+                    <button class="copy-btn" onclick="copyToClipboard('@nozzw', 'Telegram Handle Copied!')" aria-label="Copy Telegram Handle">
+                        <i class="fa-regular fa-copy"></i>
+                    </button>
+                </div>
+
+                <!-- Discord -->
+                <div class="social-row">
+                    <a href="https://discord.com/users/489395225681461270" target="_blank" class="social-btn discord link-area">
+                        <div class="icon-box"><i class="fa-brands fa-discord"></i></div>
+                        <div class="btn-text">
+                            <span class="label">Discord</span>
+                            <span class="handle">nozw</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-up-right-from-square arrow"></i>
+                    </a>
+                    <button class="copy-btn" onclick="copyToClipboard('nozw', 'Discord Username Copied!')" aria-label="Copy Discord Username">
+                        <i class="fa-regular fa-copy"></i>
+                    </button>
+                </div>
+
+                <!-- Steam -->
+                <div class="social-row">
+                    <a href="https://steamcommunity.com/id/nozwno" target="_blank" class="social-btn steam link-area">
+                        <div class="icon-box"><i class="fa-brands fa-steam"></i></div>
+                        <div class="btn-text">
+                            <span class="label">Steam</span>
+                            <span class="handle">nozwno</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-up-right-from-square arrow"></i>
+                    </a>
+                    <button class="copy-btn" onclick="copyToClipboard('nozwno', 'Steam ID Copied!')" aria-label="Copy Steam ID">
+                        <i class="fa-regular fa-copy"></i>
+                    </button>
                 </div>
             </div>
-        </section>
+        </div>
     </main>
-
-    <footer class="footer">
-        <div>
-            <strong>LibraVerse</strong>
-            <p class="muted">Фронтенд готов для GitHub Pages. После завершения интерфейса будет добавлен бэкенд, размещённый отдельно (например, Vercel) для работы аккаунтов и синхронизации прогресса.</p>
-        </div>
-        <div class="footer-links">
-            <span><i class="fa-solid fa-book-open"></i> Каталог</span>
-            <span><i class="fa-solid fa-users"></i> Сообщество читателей</span>
-            <span><i class="fa-solid fa-shield"></i> Безопасность данных</span>
-        </div>
-    </footer>
-
-    <div id="modal-overlay" class="overlay hidden" role="dialog" aria-modal="true">
-        <div class="auth-modal">
-            <button class="close" id="modal-close" aria-label="Закрыть">⨯</button>
-            <div class="tabs">
-                <button id="tab-login" class="tab active">Вход</button>
-                <button id="tab-register" class="tab">Регистрация</button>
-            </div>
-            <form id="login-form" class="auth-form">
-                <label>Email
-                    <input type="email" id="login-email" required>
-                </label>
-                <label>Пароль
-                    <input type="password" id="login-password" required>
-                </label>
-                <button type="submit" class="btn primary">Войти</button>
-            </form>
-            <form id="register-form" class="auth-form hidden">
-                <label>Имя
-                    <input type="text" id="reg-name" required>
-                </label>
-                <label>Email
-                    <input type="email" id="reg-email" required>
-                </label>
-                <label>Пароль
-                    <input type="password" id="reg-password" required>
-                </label>
-                <button type="submit" class="btn primary">Создать аккаунт</button>
-            </form>
-            <div class="muted center">Данные аккаунта сохраняются локально в браузере и готовы к синхронизации с будущим бэкендом.</div>
-        </div>
-    </div>
 
     <script src="script.js"></script>
 </body>
