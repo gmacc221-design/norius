@@ -15,8 +15,11 @@ const ctx = canvas.getContext('2d');
 let width, height;
 let stars = [];
 
-const STAR_COUNT_FACTOR = 8000; 
 const STAR_SPEED_BASE = 0.05;
+const mobileStarDensity = 12000;
+const desktopStarDensity = 8000;
+const isNarrowViewport = () => window.matchMedia('(max-width: 768px)').matches;
+const STAR_COUNT_FACTOR = () => (isNarrowViewport() ? mobileStarDensity : desktopStarDensity);
 
 function resize() {
     width = window.innerWidth;
@@ -79,7 +82,7 @@ class Star {
 
 function initStars() {
     stars = [];
-    const count = Math.floor((width * height) / STAR_COUNT_FACTOR);
+    const count = Math.floor((width * height) / STAR_COUNT_FACTOR());
     for (let i = 0; i < count; i++) {
         stars.push(new Star());
     }
@@ -108,6 +111,7 @@ animate();
 const cursor = document.getElementById('cursor');
 const cursorBlur = document.getElementById('cursor-blur');
 const card = document.getElementById('tilt-card');
+const prefersNoTilt = window.matchMedia('(max-width: 540px)');
 
 // Smooth cursor
 let cursorX = window.innerWidth / 2;
@@ -116,9 +120,9 @@ let cursorY = window.innerHeight / 2;
 document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
-    
+
     // Tilt Calculation
-    if (window.innerWidth > 480) {
+    if (window.innerWidth > 480 && !prefersNoTilt.matches) {
         const rect = card.getBoundingClientRect();
         const cardX = rect.left + rect.width / 2;
         const cardY = rect.top + rect.height / 2;
@@ -150,11 +154,16 @@ function cursorLoop() {
 }
 cursorLoop();
 
-/* 
+/*
    DISCORD STATUS & ACTIVITY (Lanyard)
-   ================================================================ 
+   ================================================================
 */
 const DISCORD_ID = '489395225681461270';
+const LANYARD_ENDPOINT = `https://api.lanyard.rest/v1/users/${DISCORD_ID}`;
+const CACHE_KEY = 'lanyard-cache';
+const CACHE_TTL_MS = 15000;
+let lanyardIntervalId = null;
+let isFetchingPresence = false;
 const statusDot = document.getElementById('status-dot');
 const avatarImg = document.getElementById('avatar');
 
@@ -168,22 +177,73 @@ const actTime = document.getElementById('activity-time');
 
 let currentActivityStart = null;
 
-async function fetchLanyard() {
+function loadCachedPresence() {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+
     try {
-        const response = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`);
+        const parsed = JSON.parse(cached);
+        const age = Date.now() - parsed.timestamp;
+        if (age < CACHE_TTL_MS && parsed.data) {
+            updatePresence(parsed.data);
+            return parsed.data;
+        }
+    } catch (error) {
+        console.warn('Failed to parse cached presence', error);
+    }
+    return null;
+}
+
+function cachePresence(data) {
+    try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+    } catch (error) {
+        console.warn('Unable to cache presence', error);
+    }
+}
+
+async function fetchLanyard() {
+    if (isFetchingPresence) return;
+
+    isFetchingPresence = true;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+    try {
+        const response = await fetch(LANYARD_ENDPOINT, { signal: controller.signal, cache: 'no-store' });
         const data = await response.json();
-        
+
         if (data.success && data.data) {
+            cachePresence(data.data);
             updatePresence(data.data);
         }
     } catch (error) {
         console.error('Lanyard Fetch Error:', error);
+        loadCachedPresence();
+    } finally {
+        clearTimeout(timeoutId);
+        isFetchingPresence = false;
     }
 }
 
+function startPresencePolling(interval = 5000) {
+    if (lanyardIntervalId) clearInterval(lanyardIntervalId);
+    lanyardIntervalId = setInterval(fetchLanyard, interval);
+}
+
 // Initial fetch and interval
+loadCachedPresence();
 fetchLanyard();
-setInterval(fetchLanyard, 5000);
+startPresencePolling();
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        startPresencePolling(15000);
+    } else {
+        fetchLanyard();
+        startPresencePolling();
+    }
+});
 
 // Timer Interval (every 1s)
 setInterval(() => {
